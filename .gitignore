@@ -1,2 +1,4 @@
-bin/*
+tests/*
+!tests/*.nim
+!tests/*.cfg
 .direnv/*
