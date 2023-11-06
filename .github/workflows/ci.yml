@@ -30,5 +30,5 @@ jobs:
           key: ${{ runner.os }}-nimble-${{ hashFiles('*.nimble') }}
           restore-keys: |
             ${{ runner.os }}-nimble-
-      - name: Run `nimble build -Y` inside Nix flake
-        run: nix develop --command -- nimble build -Y
+      - name: Run `nimble test -Y` inside Nix flake
+        run: nix develop --command -- nimble test -Y
