@@ -2,7 +2,7 @@ when not isMainModule:
   {.fatal: "This module is not supposed to be used as a library".}
 
 import genesis
-import std / [ unittest, sugar ]
+import std / [ unittest, sugar, strutils ]
 
 suite "Gene Expression Programming":
   test "Define and evaluate arithmetic symbols":
@@ -20,8 +20,8 @@ suite "Gene Expression Programming":
           "c": 2
         }
       )
-      geneOne = def.fromNamesToGene(["Mul", "Add", "a", "b", "c"])
-      geneTwo = def.fromNamesToGene(["Div", "Add", "Mul", "Sub", "a", "b", "c", "b", "a"])
+      geneOne = def.fromNamesToGene("Mul:Add:a:b:c".split(":"))
+      geneTwo = def.fromNamesToGene("Div:Add:Mul:Sub:a:b:c:b:a".split(":"))
       checks = {
         geneOne: {
           def.prefixEval(geneOne, [1.0, 2.0, 3.0]):  9.0,
