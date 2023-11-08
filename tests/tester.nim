@@ -56,4 +56,28 @@ suite "Gene Expression Programming":
       inc count
       check gene.len == 7
       check gene[pop.headLen..<gene.len].allIt(it in pop.terminals)
+      check pop.fitness[count - 1] == 0.0
     check count == 10
+  test "Population fitness calculation and ensurance":
+    var
+      pop = def.initPopulation(
+        size = 5,
+        headLen = 5,
+        binaryOpNames = "Add:Sub:Mul".split(":"),
+        terminalNames = "a:b:c".split(":")
+      )
+      eliteIdx = 0
+    let
+      xy = { # y = a * a + b
+        [ 2.0,  5.0, 10.0]:  9.0,
+        [-2.0,  1.0, -3.0]:  5.0,
+        [ 1.0, -2.0,  7.0]: -1.0
+      }
+    def.updateAllFitness(pop, xy)
+    for idx in 0..<pop.genes.len:
+      check pop.fitness[idx] > 0.0
+    def.ensureSomeFitness(pop, xy, atLeast = 50.0)
+    for idx in 0..<pop.genes.len:
+      if pop.fitness[idx] > pop.fitness[eliteIdx]:
+        eliteIdx = idx
+    check pop.fitness[eliteIdx] >= 50.0

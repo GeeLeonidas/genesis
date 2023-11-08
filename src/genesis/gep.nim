@@ -1,4 +1,4 @@
-import std / [ sugar, tables, random, sequtils ]
+import std / [ sugar, tables, random, sequtils, math ]
 
 type
   UnaryOp* = (float) -> float
@@ -21,6 +21,7 @@ type
     symToName: Table[Symbol, string]
   Population* = object
     genes: seq[Gene]
+    fitness: seq[float]
     headLen: Natural
     unaryOps: seq[Symbol]
     binaryOps: seq[Symbol]
@@ -28,6 +29,7 @@ type
     terminals: seq[Symbol]
 
 template genes*(pop: Population): seq[Gene] = pop.genes
+template fitness*(pop: Population): seq[float] = pop.fitness
 template headLen*(pop: Population): Natural = pop.headLen
 template unaryOps*(pop: Population): seq[Symbol] = pop.unaryOps
 template binaryOps*(pop: Population): seq[Symbol] = pop.binaryOps
@@ -117,6 +119,7 @@ proc initPopulation*(
     result.terminals.add(sym)
   result.headLen = headLen
   result.genes = newSeq[Gene](size)
+  result.fitness = newSeq[float](size)
   initAllGenes(result)
 
 proc fromNamesToGene*(def: SymDef, names: openArray[string]): Gene =
@@ -145,3 +148,24 @@ proc prefixEval*(def: SymDef, gene: Gene, input: openArray[float]; symIdx = 0.Na
     let terminalIdx = def.symToTerminalIdx[sym]
     return (input[terminalIdx], symIdx)
   raise newException(ValueError, "Trying to evaluate an undefined symbol")
+
+proc calculateFitness*[N](def: SymDef, gene: Gene, xy: openArray[tuple[input: array[N, float], expected: float]]): float =
+  var sumSquaredError = 0.0
+  for (input, expected) in xy:
+    let (evaluated, _) = try: def.prefixEval(gene, input) except: return 0.0
+    sumSquaredError += pow(expected - evaluated, 2)
+  let mse = sumSquaredError / xy.len.float
+  return 1e3 / (1.0 + mse)
+
+template updateAllFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]]) =
+  for idx in 0..<pop.genes.len:
+    pop.fitness[idx] = def.calculateFitness(pop.genes[idx], xy)
+
+template ensureSomeFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]], atLeast: float) =
+  block outer:
+    while true:
+      for idx in 0..<pop.genes.len:
+        let fitness = pop.fitness[idx]
+        if fitness >= atLeast:
+          break outer
+      def.updateAllFitness(pop, xy)
