@@ -1,4 +1,4 @@
-import std / [ sugar, tables, random ]
+import std / [ sugar, tables, random, sequtils ]
 
 type
   UnaryOp* = (float) -> float
@@ -18,11 +18,18 @@ type
     nameToSym: Table[string, char]
   Population* = object
     genes: seq[string]
-    headSize: Natural
+    headLen: Natural
     unaryOps: seq[char]
     binaryOps: seq[char]
     ternaryOps: seq[char]
     terminals: seq[char]
+
+template genes*(pop: Population): seq[string] = pop.genes
+template headLen*(pop: Population): Natural = pop.headLen
+template unaryOps*(pop: Population): seq[char] = pop.unaryOps
+template binaryOps*(pop: Population): seq[char] = pop.binaryOps
+template ternaryOps*(pop: Population): seq[char] = pop.ternaryOps
+template terminals*(pop: Population): seq[char] = pop.terminals
 
 proc initSymDef*(
   unaryOps: openArray[tuple[name: string, op: UnaryOp]] = [],
@@ -56,14 +63,38 @@ proc initSymDef*(
     result.nameToSym[name] = count.char
     inc count
 
-proc addGeneTo(pop: var Population) =
-  discard # TODO: gene initialization
+proc getMaxParamCount(pop: Population): Natural =
+  result = 0
+  if pop.ternaryOps.len > 0:
+    result = 3
+  elif pop.binaryOps.len > 0:
+    result = 2
+  elif pop.unaryOps.len > 0:
+    result = 1
+
+proc tailLen(pop: Population): Positive =
+  pop.headLen * (pop.getMaxParamCount() - 1) + 1
+
+proc initAllGenes*(pop: var Population) =
+  let
+    allSymbols = pop.unaryOps.
+          concat(pop.binaryOps).
+          concat(pop.ternaryOps).
+          concat(pop.terminals)
+    totalLen = pop.headLen + pop.tailLen
+  for gene in pop.genes.mitems:
+    gene = newString(totalLen)
+    for idx in 0..<pop.headLen:
+      gene[idx] = sample allSymbols
+    for idx in pop.headLen..<totalLen:
+      gene[idx] = sample pop.terminals
 
 proc initPopulation*(
   def: SymDef,
   size: Positive,
-  headSize: Natural;
-  unaryOpNames, binaryOpNames, ternaryOpNames, terminalNames: openArray[string]
+  headLen: Natural;
+  unaryOpNames, binaryOpNames, ternaryOpNames: openArray[string] = [],
+  terminalNames: openArray[string]
 ): Population =
   for name in unaryOpNames:
     let sym = def.nameToSym[name]
@@ -77,21 +108,9 @@ proc initPopulation*(
   for name in terminalNames:
     let sym = def.nameToSym[name]
     result.terminals.add(sym)
-  result.headSize = headSize
-  for _ in 1..size:
-    addGeneTo(result)
-
-proc getMaxParamCount(pop: Population): Natural =
-  result = 0
-  if pop.ternaryOps.len > 0:
-    result = 3
-  elif pop.binaryOps.len > 0:
-    result = 2
-  elif pop.unaryOps.len > 0:
-    result = 1
-
-proc tailSize(pop: Population, def: SymDef): Positive =
-  pop.headSize * (pop.getMaxParamCount() - 1) + 1
+  result.headLen = headLen
+  result.genes = newSeq[string](size)
+  initAllGenes(result)
 
 proc fromNamesToGene*(def: SymDef, names: openArray[string]): string =
   for name in names:

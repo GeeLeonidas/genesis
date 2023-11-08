@@ -2,10 +2,10 @@ when not isMainModule:
   {.fatal: "This module is not supposed to be used as a library".}
 
 import genesis
-import std / [ unittest, sugar, strutils ]
+import std / [ unittest, sugar, strutils, sequtils ]
 
 suite "Gene Expression Programming":
-  test "Define and evaluate arithmetic symbols":
+  setup:
     let
       def = initSymDef(
         binaryOps = {
@@ -20,6 +20,8 @@ suite "Gene Expression Programming":
           "c": 2
         }
       )
+  test "Evaluate arithmetic symbols":
+    let
       geneOne = def.fromNamesToGene("Mul:Add:a:b:c".split(":"))
       geneTwo = def.fromNamesToGene("Div:Add:Mul:Sub:a:b:c:b:a".split(":"))
       checks = {
@@ -42,3 +44,16 @@ suite "Gene Expression Programming":
           (evaluated, lastIdx) = evalInfo
         check evaluated == expected
         check lastIdx   == gene.high
+  test "Gene and population initialization":
+    let pop = def.initPopulation(
+      size = 10,
+      headLen = 3,
+      binaryOpNames = "Add:Sub:Mul:Div".split(":"),
+      terminalNames = "a:b:c".split(":")
+    )
+    var count = 0
+    for gene in pop.genes:
+      inc count
+      check gene.len == 7
+      check gene[pop.headLen..<gene.len].allIt(it in pop.terminals)
+    check count == 10
