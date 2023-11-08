@@ -16,6 +16,7 @@ type
     symToTernaryOp: Table[char, TernaryOp]
     symToTerminalIdx: Table[char, Natural]
     nameToSym: Table[string, char]
+    symToName: Table[char, string]
   Population* = object
     genes: seq[string]
     headLen: Natural
@@ -43,24 +44,28 @@ proc initSymDef*(
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
     result.nameToSym[name] = count.char
+    result.symToName[count.char] = name
     inc count
   for (name, op) in binaryOps:
     result.symToBinaryOp[count.char] = op
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
     result.nameToSym[name] = count.char
+    result.symToName[count.char] = name
     inc count
   for (name, op) in ternaryOps:
     result.symToTernaryOp[count.char] = op
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
     result.nameToSym[name] = count.char
+    result.symToName[count.char] = name
     inc count
   for (name, idx) in terminalIdxs:
     result.symToTerminalIdx[count.char] = idx
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
     result.nameToSym[name] = count.char
+    result.symToName[count.char] = name
     inc count
 
 proc getMaxParamCount(pop: Population): Natural =
