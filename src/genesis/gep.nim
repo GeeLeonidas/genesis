@@ -10,27 +10,29 @@ template newBinaryOp*(body: untyped): BinaryOp = (x, y: float) => body
 template newTernaryOp*(body: untyped): TernaryOp = (x, y, z: float) => body
 
 type
+  Symbol* = char
+  Gene* = seq[Symbol]
   SymDef* = object
-    symToUnaryOp: Table[char, UnaryOp]
-    symToBinaryOp: Table[char, BinaryOp]
-    symToTernaryOp: Table[char, TernaryOp]
-    symToTerminalIdx: Table[char, Natural]
-    nameToSym: Table[string, char]
-    symToName: Table[char, string]
+    symToUnaryOp: Table[Symbol, UnaryOp]
+    symToBinaryOp: Table[Symbol, BinaryOp]
+    symToTernaryOp: Table[Symbol, TernaryOp]
+    symToTerminalIdx: Table[Symbol, Natural]
+    nameToSym: Table[string, Symbol]
+    symToName: Table[Symbol, string]
   Population* = object
-    genes: seq[string]
+    genes: seq[Gene]
     headLen: Natural
-    unaryOps: seq[char]
-    binaryOps: seq[char]
-    ternaryOps: seq[char]
-    terminals: seq[char]
+    unaryOps: seq[Symbol]
+    binaryOps: seq[Symbol]
+    ternaryOps: seq[Symbol]
+    terminals: seq[Symbol]
 
-template genes*(pop: Population): seq[string] = pop.genes
+template genes*(pop: Population): seq[Gene] = pop.genes
 template headLen*(pop: Population): Natural = pop.headLen
-template unaryOps*(pop: Population): seq[char] = pop.unaryOps
-template binaryOps*(pop: Population): seq[char] = pop.binaryOps
-template ternaryOps*(pop: Population): seq[char] = pop.ternaryOps
-template terminals*(pop: Population): seq[char] = pop.terminals
+template unaryOps*(pop: Population): seq[Symbol] = pop.unaryOps
+template binaryOps*(pop: Population): seq[Symbol] = pop.binaryOps
+template ternaryOps*(pop: Population): seq[Symbol] = pop.ternaryOps
+template terminals*(pop: Population): seq[Symbol] = pop.terminals
 
 proc initSymDef*(
   unaryOps: openArray[tuple[name: string, op: UnaryOp]] = [],
@@ -40,32 +42,32 @@ proc initSymDef*(
 ): SymDef =
   var count = 0
   for (name, op) in unaryOps:
-    result.symToUnaryOp[count.char] = op
+    result.symToUnaryOp[count.Symbol] = op
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
-    result.nameToSym[name] = count.char
-    result.symToName[count.char] = name
+    result.nameToSym[name] = count.Symbol
+    result.symToName[count.Symbol] = name
     inc count
   for (name, op) in binaryOps:
-    result.symToBinaryOp[count.char] = op
+    result.symToBinaryOp[count.Symbol] = op
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
-    result.nameToSym[name] = count.char
-    result.symToName[count.char] = name
+    result.nameToSym[name] = count.Symbol
+    result.symToName[count.Symbol] = name
     inc count
   for (name, op) in ternaryOps:
-    result.symToTernaryOp[count.char] = op
+    result.symToTernaryOp[count.Symbol] = op
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
-    result.nameToSym[name] = count.char
-    result.symToName[count.char] = name
+    result.nameToSym[name] = count.Symbol
+    result.symToName[count.Symbol] = name
     inc count
   for (name, idx) in terminalIdxs:
-    result.symToTerminalIdx[count.char] = idx
+    result.symToTerminalIdx[count.Symbol] = idx
     if result.nameToSym.hasKey(name):
       raise newException(ValueError, "Do not attribute the same name to different symbols")
-    result.nameToSym[name] = count.char
-    result.symToName[count.char] = name
+    result.nameToSym[name] = count.Symbol
+    result.symToName[count.Symbol] = name
     inc count
 
 proc getMaxParamCount(pop: Population): Natural =
@@ -88,7 +90,7 @@ proc initAllGenes*(pop: var Population) =
           concat(pop.terminals)
     totalLen = pop.headLen + pop.tailLen
   for gene in pop.genes.mitems:
-    gene = newString(totalLen)
+    gene = newSeq[Symbol](totalLen)
     for idx in 0..<pop.headLen:
       gene[idx] = sample allSymbols
     for idx in pop.headLen..<totalLen:
@@ -114,14 +116,14 @@ proc initPopulation*(
     let sym = def.nameToSym[name]
     result.terminals.add(sym)
   result.headLen = headLen
-  result.genes = newSeq[string](size)
+  result.genes = newSeq[Gene](size)
   initAllGenes(result)
 
-proc fromNamesToGene*(def: SymDef, names: openArray[string]): string =
+proc fromNamesToGene*(def: SymDef, names: openArray[string]): Gene =
   for name in names:
     result.add(def.nameToSym[name])
 
-proc prefixEval*(def: SymDef, gene: string, input: openArray[float]; symIdx = 0.Natural): (float, Natural) =
+proc prefixEval*(def: SymDef, gene: Gene, input: openArray[float]; symIdx = 0.Natural): (float, Natural) =
   let sym = gene[symIdx]
   if def.symToBinaryOp.hasKey(sym):
     let
