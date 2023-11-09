@@ -157,15 +157,27 @@ proc calculateFitness*[N](def: SymDef, gene: Gene, xy: openArray[tuple[input: ar
   let mse = sumSquaredError / xy.len.float
   return 1e3 / (1.0 + mse)
 
-template updateAllFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]]) =
+proc updateAllFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]]) =
   for idx in 0..<pop.genes.len:
     pop.fitness[idx] = def.calculateFitness(pop.genes[idx], xy)
 
-template ensureSomeFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]], atLeast: float) =
-  block outer:
-    while true:
-      for idx in 0..<pop.genes.len:
-        let fitness = pop.fitness[idx]
-        if fitness >= atLeast:
-          break outer
-      def.updateAllFitness(pop, xy)
+proc ensureSomeFitness*[N](def: SymDef, pop: var Population, xy: openArray[tuple[input: array[N, float], expected: float]], atLeast: float) =
+  while true:
+    for idx in 0..<pop.genes.len:
+      let fitness = pop.fitness[idx]
+      if fitness >= atLeast:
+        return
+    def.updateAllFitness(pop, xy)
+
+proc sortElite*(pop: var Population) =
+  var eliteIdx = 0
+  for idx in 0..<pop.genes.len:
+    if pop.fitness[idx] > pop.fitness[eliteIdx]:
+      eliteIdx = idx
+  let
+    geneZero = pop.genes[0]
+    fitnessZero = pop.fitness[0]
+  pop.genes[0] = pop.genes[eliteIdx]
+  pop.fitness[0] = pop.fitness[eliteIdx]
+  pop.genes[eliteIdx] = geneZero
+  pop.fitness[eliteIdx] = fitnessZero

@@ -58,7 +58,7 @@ suite "Gene Expression Programming":
       check gene[pop.headLen..<gene.len].allIt(it in pop.terminals)
       check pop.fitness[count - 1] == 0.0
     check count == 10
-  test "Population fitness calculation and ensurance":
+  test "Population fitness calculation and elite ensurance":
     var
       pop = def.initPopulation(
         size = 5,
@@ -66,7 +66,6 @@ suite "Gene Expression Programming":
         binaryOpNames = "Add:Sub:Mul".split(":"),
         terminalNames = "a:b:c".split(":")
       )
-      eliteIdx = 0
     let
       xy = { # y = a * a + b
         [ 2.0,  5.0, 10.0]:  9.0,
@@ -76,8 +75,6 @@ suite "Gene Expression Programming":
     def.updateAllFitness(pop, xy)
     for idx in 0..<pop.genes.len:
       check pop.fitness[idx] > 0.0
-    def.ensureSomeFitness(pop, xy, atLeast = 50.0)
-    for idx in 0..<pop.genes.len:
-      if pop.fitness[idx] > pop.fitness[eliteIdx]:
-        eliteIdx = idx
-    check pop.fitness[eliteIdx] >= 50.0
+    def.ensureSomeFitness(pop, xy, atLeast = 80.0)
+    sortElite(pop)
+    check pop.fitness[0] >= 80.0
