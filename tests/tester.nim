@@ -78,3 +78,27 @@ suite "Gene Expression Programming":
     def.ensureSomeFitness(pop, xy, atLeast = 80.0)
     sortElite(pop)
     check pop.fitness[0] >= 80.0
+  test "Roulette selection":
+    var
+      pop = def.initPopulation(
+        size = 5,
+        headLen = 10,
+        binaryOpNames = "Add:Sub:Mul:Div".split(":"),
+        terminalNames = "a:b:c".split(":")
+      )
+    let
+      xy = { # y = a / (b * b + 1)
+        [ 2.0,  1.0, 10.0]:  1.0,
+        [-2.0,  0.0, -3.0]: -2.0,
+        [ 1.0, -2.0,  7.0]:  1/5
+      }
+    def.updateAllFitness(pop, xy)
+    var invalidFound = false
+    for idx in 0..<pop.genes.len:
+      if pop.fitness[idx] == 0.0:
+        invalidFound = true
+        break
+    check invalidFound
+    apllyRouletteSelection(pop)
+    for idx in 0..<pop.genes.len:
+      check pop.fitness[idx] > 0.0

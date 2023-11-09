@@ -187,3 +187,23 @@ proc sortElite*(pop: var Population) =
   pop.fitness[0] = pop.fitness[eliteIdx]
   pop.genes[eliteIdx] = geneZero
   pop.fitness[eliteIdx] = fitnessZero
+
+proc apllyRouletteSelection*(pop: var Population) =
+  for targetIdx in 0..<pop.genes.len:
+    let
+      oldPop = pop
+      sumFitness = sum oldPop.fitness
+      chosenSpot = rand 0.0..sumFitness
+    var
+      currentSum = 0.0
+      currentIdx = 0
+      lastValidIdx = -1
+    while lastValidIdx == -1 or currentSum < chosenSpot:
+      let geneFitness = oldPop.fitness[currentIdx]
+      if geneFitness > 0.0:
+        lastValidIdx = currentIdx
+      currentSum += geneFitness
+      inc currentIdx
+    pop.genes[targetIdx] = pop.genes[lastValidIdx]
+    pop.fitness[targetIdx] = pop.fitness[lastValidIdx]
+  
