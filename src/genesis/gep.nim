@@ -152,7 +152,13 @@ proc prefixEval*(def: SymDef, gene: Gene, input: openArray[float]; symIdx = 0.Na
 proc calculateFitness*[N](def: SymDef, gene: Gene, xy: openArray[tuple[input: array[N, float], expected: float]]): float =
   var sumSquaredError = 0.0
   for (input, expected) in xy:
-    let (evaluated, _) = try: def.prefixEval(gene, input) except: return 0.0
+    let (evaluated, _) = def.prefixEval(gene, input)
+    if evaluated.isNaN:
+      return 0.0
+    if evaluated == Inf or evaluated == NegInf:
+      if evaluated == expected:
+        continue
+      return 0.0
     sumSquaredError += pow(expected - evaluated, 2)
   let mse = sumSquaredError / xy.len.float
   return 1e3 / (1.0 + mse)
